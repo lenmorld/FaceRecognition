@@ -7,21 +7,18 @@ import numpy as np
 import os
 import math
 
-
-
 '''
-#take a picture
+# take a picture
 webcam = cv2.VideoCapture(0)
 _, frame = webcam.read()
 cv2.waitKey(1000)
 webcam.release()
 '''
 
-
-
+print(cv2.__version__)
 
 class FaceDetector(object):
-    def __init__(self, xml_path):
+    def __init__(self, xml_path: object) -> object:
         self.classifier = cv2.CascadeClassifier(xml_path)
 
     def detect(self, image, biggest_only=True):
@@ -38,8 +35,8 @@ class FaceDetector(object):
                                                        minSize=min_size,
                                                        flags=flags)
 
+        #self.classifier.detectMultiScale()
         return faces_coord
-
 
 class VideoCamera(object):
     def __init__(self, index=0):
@@ -56,7 +53,6 @@ class VideoCamera(object):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         return frame
 
-
 def cut_faces(image, faces_coord):
     faces = []
 
@@ -66,7 +62,6 @@ def cut_faces(image, faces_coord):
 
     return faces
 
-
 def normalize_intensity(images):
     images_norm = []
     for image in images:
@@ -75,7 +70,6 @@ def normalize_intensity(images):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         images_norm.append(cv2.equalizeHist(image))
     return images_norm
-
 
 def resize(images, size=(50, 50)):
     images_norm = []
@@ -89,7 +83,6 @@ def resize(images, size=(50, 50)):
         images_norm.append(image_norm)
 
     return images_norm
-
 
 def normalize_faces(frame, faces_coord):
     faces = cut_faces(frame, faces_coord)
@@ -117,16 +110,61 @@ def collect_dataset():
     return (images, np.array(labels), labels_dic)
 
 
+def draw_label(image, text, coord, conf, threshold):
+    if conf < threshold:    # apply threshold
+        cv2.putText(image, text.capitalize(),
+                    coord,
+                    cv2.FONT_HERSHEY_PLAIN, 3, (66, 53, 243), 2)
+    else:
+        cv2.putText(image, "Unknown",
+                    coord,
+                    cv2.FONT_HERSHEY_PLAIN, 3, (66, 53, 243), 2)
+
+
+
+
+def live_recognition(index, webcam):
+
+    detector = FaceDetector("xml/frontal_face.xml")
+    while True:
+        frame = webcam.get_frame()
+        faces_coord = detector.detect(frame, False)  # detect more than one face
+        if len(faces_coord):
+            faces = normalize_faces(frame, faces_coord)  # norm pipeline
+            for i, face in enumerate(faces):  # for each detected face
+                collector = cv2.face.MinDistancePredictCollector()
+                rec_lbph.predict(face, collector)
+                conf = collector.getDist()
+                pred = collector.getLabel()
+                threshold = 140
+                draw_label(frame, labels_dic[pred],
+                           (faces_coord[i][0], faces_coord[i][1] - 10),
+                           conf, threshold)
+            draw_rectangle(frame, faces_coord)  # rectangle around face
+        cv2.putText(frame, "ESC to exit", (5, frame.shape[0] - 5),
+                    cv2.FONT_HERSHEY_PLAIN, 1.3, (66, 53, 243), 2,
+                    cv2.LINE_AA)
+        if index == 0:
+            cv2.putText(frame, "Laptop", (frame.shape[1] - 100, 30),
+                        cv2.FONT_HERSHEY_PLAIN, 1.3, (66, 53, 243), 2, cv2.LINE_AA)
+        else:
+            cv2.putText(frame, "External", (frame.shape[1] - 120, 30),
+                        cv2.FONT_HERSHEY_PLAIN, 1.3, (66, 53, 243), 2, cv2.LINE_AA)
+
+        cv2.imshow("PyData Tutorial", frame)  # live feed in external
+        if cv2.waitKey(30) & 0xFF == 27:
+            cv2.destroyAllWindows()
+            del webcam
+            return 0
+            break
+    return 1
+
+
 
 
 ################ main ###############
 
-#webcam = VideoCamera()
-
-
-
-
-
+# load images, load labels, and train models
 images, labels, labels_dic = collect_dataset()
 
 rec_eig = cv2.face.createEigenFaceRecognizer()
@@ -139,10 +177,46 @@ rec_fisher.train(images, labels)
 rec_lbph = cv2.face.createLBPHFaceRecognizer()
 rec_lbph.train(images, labels)
 
-print ("Models Trained Succesfully")
+print("Models Trained Succesfully")
 
 
+# setup webcam live feed
+detector = FaceDetector("xml/frontal_face.xml")
+webcam = VideoCamera(0)
 
+# create cv2 window
+cv2.namedWindow("PyData Tutorial", cv2.WINDOW_AUTOSIZE)
+
+
+result = live_recognition(0, webcam)
+
+if result == 0:
+    print("ESC pressed. Exited successfully")
+
+'''
+# make predictions
+collector = cv2.face.MinDistancePredictCollector()
+
+rec_eig.predict(face, collector)
+conf = collector.getDist()
+pred = collector.getLabel()
+print ("Eigen Faces -> Prediction: " + labels_dic[pred].capitalize() +\
+"    Confidence: " + str(round(conf)))
+
+rec_fisher.predict(face, collector)
+conf = collector.getDist()
+pred = collector.getLabel()
+print ( "Fisher Faces -> Prediction: " +\
+labels_dic[pred].capitalize() + "    Confidence: " + str(round(conf)))
+
+rec_lbph.predict(face, collector)
+conf = collector.getDist()
+pred = collector.getLabel()
+
+print ("LBPH Faces  -> Prediction: " + labels_dic[pred].capitalize() +\
+"    Confidence: " + str(round(conf)))
+
+'''
 
 '''
 detector = FaceDetector("xml/frontal_face.xml")
@@ -175,4 +249,3 @@ else:
     print "This name already exists."
 
 '''
-

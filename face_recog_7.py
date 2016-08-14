@@ -46,7 +46,7 @@ class VideoCamera(object):
     def __init__(self, index=0):
         self.video = cv2.VideoCapture(index)
         self.index = index
-        print self.video.isOpened()
+        print (self.video.isOpened())
 
     def __del__(self):
         self.video.release()
@@ -139,7 +139,7 @@ rec_fisher.train(images, labels)
 rec_lbph = cv2.face.createLBPHFaceRecognizer()
 rec_lbph.train(images, labels)
 
-print "Models Trained Succesfully"
+print ("Models Trained Succesfully")
 
 
 

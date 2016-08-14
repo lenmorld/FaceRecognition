@@ -46,7 +46,7 @@ class VideoCamera(object):
     def __init__(self, index=0):
         self.video = cv2.VideoCapture(index)
         self.index = index
-        print self.video.isOpened()
+        print(self.video.isOpened())
 
     def __del__(self):
         self.video.release()
@@ -110,7 +110,7 @@ webcam = VideoCamera()
 detector = FaceDetector("xml/frontal_face.xml")
 
 #cv2.startWindowThread()
-folder = "people/" + raw_input('Person: ').lower() # input name
+folder = "people/" + input('Person: ').lower() # input name
 cv2.namedWindow("PyData Tutorial", cv2.WINDOW_AUTOSIZE)
 
 if not os.path.exists(folder):
@@ -134,5 +134,5 @@ if not os.path.exists(folder):
         timer += 50
     cv2.destroyAllWindows()
 else:
-    print "This name already exists."
+    print ("This name already exists.")
 
